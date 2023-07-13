@@ -1,0 +1,7 @@
+#canvas{position:fixed;height:100%;left:0;top:0;background:#777;}
+
+#menu{position:absolute;background:#fff;border:2px solid#ccc;border-radius:5px;right:0;top:50%;z-index:1;height:calc(100% - 30px);width:300px;transform:translateY(-50%);}
+#tile{position:relative;width:100%;}
+
+#tools{position:fixed;left:0;top:0;width:48px;height:100%;background:#fff;border-right:2px solid#ccc;z-index:1;}
+#tools svg{width:40px;margin:4px;}

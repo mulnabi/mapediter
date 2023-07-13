@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html><html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="user-scalable=no">
+	<title>맵툴</title>
+	<link rel="stylesheet" href="css/main.css">
+	<script>
+		const 설치=(name,txt)=>{var $=document.createElement('a');$.href=window.URL.createObjectURL(new Blob([txt],{type:'application/nabi'}));$.download=name;$.click()}
+		function SCV(arr){
+			let r=''
+			arr.map($=>{
+				$.map((_,i)=>{
+					r+=_
+					if($[i+1])r+=','
+				})
+				r+='\n'
+			})
+			return r;
+		}
+	</script>
+</head>
+<body>
+	<div id="tools">
+		<svg viewBox="0 0 24 24" onclick="설치('map.scv',SCV(map.map))"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15v5h16v-5m-4-1-4 3-4-3m4 3V4"/></svg>
+	</div>
+	<canvas id="canvas" height="720"></canvas>
+	<div id="menu">
+		<input type="file"id="file">
+		<canvas id="tile"></canvas>
+	</div>
+	<script>
+		let sel=new Image;
+		sel.src="타일선택.png";
+		let C=document.getElementById("canvas",{antialias:0}).getContext("2d"),T=document.getElementById("tile").getContext("2d"),
+		map={
+			map:[],
+			w:1,
+			h:1,
+			tilesize:20,
+			tilecol:9,
+			scale:45,
+			img:new Image,
+			setimg(img,col){
+				this.img.src=img;
+				this.tilecol=col;
+				this.img.onload=e=>{
+					console.log(T.drawimage);
+					this.tilesize=(tile.width=this.img.width)/col
+					T.drawImage(this.img,0,0)
+					
+				}
+			},
+			set(w,h){
+				let buf_map=this.map;
+				this.map=[];
+				this.w=w;
+				this.h=h;
+				for(let x=0;w-x;++x){
+					this.map[x]=[];
+					for(let y=0;h-y;++y)this.map[x][y]=buf_map[x]?.[y]||11;
+				}
+			},
+			print(x,y){
+				C.clearRect(0,0,canvas.width,canvas.height);
+				C.fillStyle="#fff3"
+				C.fillRect(-x*this.scale,-y*this.scale,this.w*this.scale,this.h*this.scale)
+				let X=x%1,Y=y%1;
+				X=X<0?1+X:X;Y=Y<0?1+Y:Y
+				for(let j=0;j*this.scale<=canvas.height;++j)
+					for(let i=0;i*this.scale<=canvas.width;++i){
+						if(j>=0&&i>=0){
+							let data=this.map[Math.floor(y)+j]?.[Math.floor(x)+i]-1,col=data/this.tilecol|0;
+							if(data+1)C.drawImage(this.img,(data-col*this.tilecol)*this.tilesize|0,col*this.tilesize,this.tilesize,this.tilesize,(i-X)*this.scale,(j-Y)*this.scale,this.scale,this.scale)
+						}
+					}
+			},
+			edit(x,y,data=0){
+				console.log(this.map[y/this.scale|0]?.[x/this.scale|0]);
+				if(0<=x/this.scale&&x/this.scale<=this.w&&0<=y/this.scale&&y/this.scale<=this.h)this.map[y/this.scale|0][x/this.scale|0]=data;
+			}
+		},x=0,y=0;
+		map.setimg("맵칩.png",9)
+		map.set(10,10)
+		map.print(x,y);
+		canvas.width=canvas.height*window.innerWidth/window.innerHeight;
+		x=-canvas.width/2/map.scale
+		y=-canvas.height/2/map.scale
+		C.imageSmoothingEnabled=0;
+		window.addEventListener("resize",()=>{
+			canvas.width=canvas.height*window.innerWidth/window.innerHeight;
+			C.imageSmoothingEnabled=0;
+			map.print(x,y);
+		})
+		
+		file.addEventListener("change",$=>{
+			if($.target.files){
+				fr=new FileReader();
+				fr.readAsDataURL($.target.files[0]);
+				fr.onloadend=f=>{
+					console.log(f.target.result);
+					map.setimg(f.target.result,9);
+				}
+			}
+		});
+		let draw_bool=0,rander_timing=0,pick_tile=0;
+		canvas.addEventListener("pointerdown",$=>{
+			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
+			map.edit(X,Y,pick_tile);
+			if(rander_timing){
+				map.print(x,y);
+				C.imageSmoothingEnabled=1;
+				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+				C.imageSmoothingEnabled=0;
+				rander_timing=0
+			}
+			draw_bool=1
+		})
+		canvas.addEventListener("pointermove",$=>{
+			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
+			if(draw_bool){
+				map.edit(X,Y,pick_tile);
+			}
+			if(rander_timing){
+				map.print(x,y);
+				C.imageSmoothingEnabled=1;
+				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+				C.imageSmoothingEnabled=0;
+				rander_timing=0
+			}
+			
+		})
+		document.addEventListener("pointerup",$=>{
+			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
+			if(draw_bool){
+				map.edit(X,Y,pick_tile);
+			}
+			if(rander_timing){
+				map.print(x,y);
+				C.imageSmoothingEnabled=1;
+				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+				C.imageSmoothingEnabled=0;
+				rander_timing=0
+			}
+			draw_bool=0
+		})
+		
+		tile.onclick=$=>{
+			let X=$.offsetX/tile.clientWidth*tile.width/map.tilesize|0,Y=$.offsetY/tile.clientWidth*tile.width/map.tilesize|0;
+			console.log(X+Y*map.tilecol)
+			pick_tile=X+1+Y*map.tilecol;
+			T.clearRect(0,0,tile.width,tile.height)
+			T.drawImage(map.img,0,0)
+			T.drawImage(sel,X*map.tilesize,Y*map.tilesize,map.tilesize,map.tilesize)
+		}
+		let key={}
+		document.addEventListener("keydown",$=>key[$.key]=1);
+		document.addEventListener("keyup",$=>key[$.key]=0)
+
+		window.requestAnimationFrame(loop)
+		function loop(){
+			if(key["ArrowLeft"]){x-=0.2;map.print(x,y);}
+			else if(key["ArrowRight"]){x+=0.2;map.print(x,y);}
+			if(key["ArrowUp"]){y-=0.2;map.print(x,y);}
+			else if(key["ArrowDown"]){y+=0.2;map.print(x,y);}
+			rander_timing=1
+			window.requestAnimationFrame(loop)
+		}
+	</script>
+</body>
+</html>
