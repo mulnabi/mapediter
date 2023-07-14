@@ -6,7 +6,7 @@
 	<link rel="stylesheet" href="css/main.css">
 	<script>
 		const 설치=(name,txt)=>{var $=document.createElement('a');$.href=window.URL.createObjectURL(new Blob([txt],{type:'application/nabi'}));$.download=name;$.click()}
-		function SCV(arr){
+		function CSV(arr){
 			let r=''
 			arr.map($=>{
 				$.map((_,i)=>{
@@ -21,7 +21,7 @@
 </head>
 <body>
 	<div id="tools">
-		<svg viewBox="0 0 24 24" onclick="설치('map.scv',SCV(map.map))"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15v5h16v-5m-4-1-4 3-4-3m4 3V4"/></svg>
+		<svg viewBox="0 0 24 24" onclick="설치('map.csv',CSV(map.map))"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15v5h16v-5m-4-1-4 3-4-3m4 3V4"/></svg>
 	</div>
 	<canvas id="canvas" height="720"></canvas>
 	<div id="menu">
