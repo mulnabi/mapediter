@@ -21,7 +21,8 @@
 </head>
 <body>
 	<div id="tools">
-		<svg viewBox="0 0 24 24" onclick="설치('map.csv',CSV(map.map))"><path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15v5h16v-5m-4-1-4 3-4-3m4 3V4"/></svg>
+		<svg viewBox="0 0 24 24" onclick="설치('map.csv',CSV(map.map))"><path stroke-linejoin="round" d="M4 15v5h16v-5m-4-1-4 3-4-3m4 3V4"/></svg>
+		<svg viewBox="0 0 24 24"><path d="M14 7 4 17v3h3l10-10-3-3m2-2 1-1 3 3-1 1-3-3"/></svg>
 	</div>
 	<canvas id="canvas" height="720"></canvas>
 	<div id="menu">
@@ -55,9 +56,9 @@
 				this.map=[];
 				this.w=w;
 				this.h=h;
-				for(let x=0;w-x;++x){
-					this.map[x]=[];
-					for(let y=0;h-y;++y)this.map[x][y]=buf_map[x]?.[y]||11;
+				for(let y=0;h-y;++y){
+					this.map[y]=[];
+					for(let x=0;w-x;++x)this.map[y][x]=buf_map[y]?.[x]||0;
 				}
 			},
 			print(x,y){
@@ -75,20 +76,25 @@
 					}
 			},
 			edit(x,y,data=0){
-				console.log(this.map[y/this.scale|0]?.[x/this.scale|0]);
-				if(0<=x/this.scale&&x/this.scale<=this.w&&0<=y/this.scale&&y/this.scale<=this.h)this.map[y/this.scale|0][x/this.scale|0]=data;
+				console.log(this.map[y|0]?.[x|0]);
+				if(0<=x&&x<=this.w&&0<=y&&y<=this.h)this.map[y|0][x|0]=data;
+			},
+			get R(){
+				return canvas.width/window.innerWidth/map.scale
 			}
 		},x=0,y=0;
 		map.setimg("맵칩.png",9)
 		map.set(10,10)
 		map.print(x,y);
 		canvas.width=canvas.height*window.innerWidth/window.innerHeight;
-		x=-canvas.width/2/map.scale
-		y=-canvas.height/2/map.scale
+		x=-canvas.width/2/map.scale+map.w/2
+		y=-canvas.height/2/map.scale+map.h/2
 		C.imageSmoothingEnabled=0;
+		C.lineJoin=C.lineCap='round';
 		window.addEventListener("resize",()=>{
 			canvas.width=canvas.height*window.innerWidth/window.innerHeight;
 			C.imageSmoothingEnabled=0;
+			C.lineJoin=C.lineCap='round';
 			map.print(x,y);
 		})
 		
@@ -102,46 +108,74 @@
 				}
 			}
 		});
-		let draw_bool=0,rander_timing=0,pick_tile=0;
+		let edit_mode=0,rander_timing=0,pick_tile=0,age={x:0,t:0};
 		canvas.addEventListener("pointerdown",$=>{
-			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
-			map.edit(X,Y,pick_tile);
-			if(rander_timing){
-				map.print(x,y);
-				C.imageSmoothingEnabled=1;
-				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
-				C.imageSmoothingEnabled=0;
-				rander_timing=0
-			}
-			draw_bool=1
-		})
-		canvas.addEventListener("pointermove",$=>{
-			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
-			if(draw_bool){
+			let X=$.x*map.R+x,Y=$.y*map.R+y;
+			if((map.w-x)/map.R-10<$.x&&$.x<(map.w-x)/map.R+10){
+				edit_mode=2
+				canvas.style.cursor="ew-resize"
+				age.x=X;
+				age.y=Y;
+			}else{
 				map.edit(X,Y,pick_tile);
+				edit_mode=1
 			}
 			if(rander_timing){
 				map.print(x,y);
-				C.imageSmoothingEnabled=1;
-				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
-				C.imageSmoothingEnabled=0;
+				C.setLineDash([7,7]);
+					C.strokeStyle=edit_mode==2?'#fff':'#000';C.lineWidth=2;C.strokeRect(-x*map.scale,-y*map.scale,map.w*map.scale,map.h*map.scale)
+				C.setLineDash([]);
+				if(edit_mode!=2){
+					canvas.style.cursor=""
+					C.imageSmoothingEnabled=1;
+					C.drawImage(sel,(X|0)*map.scale-(x+(X<0))*map.scale,(Y|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+					C.imageSmoothingEnabled=0;
+				}
 				rander_timing=0
 			}
 			
 		})
-		document.addEventListener("pointerup",$=>{
-			let X=$.x/window.innerWidth*canvas.width+x*map.scale,Y=$.y/window.innerHeight*canvas.height+y*map.scale;
-			if(draw_bool){
-				map.edit(X,Y,pick_tile);
+		canvas.addEventListener("pointermove",$=>{
+			let X=$.x*map.R+x,Y=$.y*map.R+y;
+			if((map.w-x)/map.R-10<$.x&&$.x<(map.w-x)/map.R+10)canvas.style.cursor="ew-resize"
+			else{
+				if(edit_mode!=2)canvas.style.cursor=""
+				if(edit_mode==1){
+					map.edit(X,Y,pick_tile);
+				}
 			}
 			if(rander_timing){
 				map.print(x,y);
 				C.imageSmoothingEnabled=1;
-				C.drawImage(sel,(X/map.scale|0)*map.scale-(x+(X<0))*map.scale,(Y/map.scale|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+				C.setLineDash([7,7]);
+					C.strokeStyle=edit_mode==2?'#fff':'#000';C.lineWidth=2;C.strokeRect(-x*map.scale,-y*map.scale,(map.w+(edit_mode==2&&(X-age.x)))*map.scale,map.h*map.scale)
+				C.setLineDash([]);
+				if(edit_mode!=2)C.drawImage(sel,(X|0)*map.scale-(x+(X<0))*map.scale,(Y|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
 				C.imageSmoothingEnabled=0;
 				rander_timing=0
 			}
-			draw_bool=0
+		})
+		document.addEventListener("pointerup",$=>{
+			let X=$.x*map.R+x,Y=$.y*map.R+y;
+			if(edit_mode==2){
+				map.set(map.w+Math.round(X-age.x),map.h)
+			}else if(edit_mode==1){
+				map.edit(X,Y,pick_tile);
+			}
+			if(rander_timing){
+				map.print(x,y);
+				C.setLineDash([7,7]);
+					C.strokeStyle='#000';C.lineWidth=2;C.strokeRect(-x*map.scale,-y*map.scale,map.w*map.scale,map.h*map.scale)
+				C.setLineDash([]);
+				if(edit_mode!=2){
+					canvas.style.cursor=""
+					C.imageSmoothingEnabled=1;
+					C.drawImage(sel,(X|0)*map.scale-(x+(X<0))*map.scale,(Y|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
+					C.imageSmoothingEnabled=0;
+				}
+				rander_timing=0
+			}
+			edit_mode=0
 		})
 		
 		tile.onclick=$=>{
