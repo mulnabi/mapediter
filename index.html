@@ -115,6 +115,9 @@
 				edit_mode=2
 				canvas.style.cursor="ew-resize"
 				age.x=X;
+			}else if((map.h-y)/map.R-10<$.y&&$.y<(map.h-y)/map.R+10){
+				edit_mode=2
+				canvas.style.cursor="ns-resize"
 				age.y=Y;
 			}else{
 				map.edit(X,Y,pick_tile);
@@ -138,6 +141,7 @@
 		canvas.addEventListener("pointermove",$=>{
 			let X=$.x*map.R+x,Y=$.y*map.R+y;
 			if((map.w-x)/map.R-10<$.x&&$.x<(map.w-x)/map.R+10)canvas.style.cursor="ew-resize"
+			else if((map.h-y)/map.R-10<$.y&&$.y<(map.h-y)/map.R+10)canvas.style.cursor="ns-resize"
 			else{
 				if(edit_mode!=2)canvas.style.cursor=""
 				if(edit_mode==1){
@@ -148,7 +152,12 @@
 				map.print(x,y);
 				C.imageSmoothingEnabled=1;
 				C.setLineDash([7,7]);
-					C.strokeStyle=edit_mode==2?'#fff':'#000';C.lineWidth=2;C.strokeRect(-x*map.scale,-y*map.scale,(map.w+(edit_mode==2&&(X-age.x)))*map.scale,map.h*map.scale)
+					C.strokeStyle=edit_mode==2?'#fff':'#000';C.lineWidth=2;
+					switch(canvas.style.cursor){
+						case"ew-resize":age.y=Y;break;
+						case"ns-resize":age.x=X;break;
+					}
+					C.strokeRect(-x*map.scale,-y*map.scale,(map.w+(edit_mode==2&&(X-age.x)))*map.scale,(map.h+(edit_mode==2&&(Y-age.y)))*map.scale)
 				C.setLineDash([]);
 				if(edit_mode!=2)C.drawImage(sel,(X|0)*map.scale-(x+(X<0))*map.scale,(Y|0)*map.scale-(y+(Y<0))*map.scale,map.scale,map.scale);
 				C.imageSmoothingEnabled=0;
@@ -158,7 +167,10 @@
 		document.addEventListener("pointerup",$=>{
 			let X=$.x*map.R+x,Y=$.y*map.R+y;
 			if(edit_mode==2){
-				map.set(map.w+Math.round(X-age.x),map.h)
+				switch(canvas.style.cursor){
+					case"ew-resize":age.y=Y;break;
+					case"ns-resize":age.x=X;break;
+				}map.set(map.w+Math.round(X-age.x),map.h+Math.round(Y-age.y));
 			}else if(edit_mode==1){
 				map.edit(X,Y,pick_tile);
 			}
